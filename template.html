@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background: #f8f9fa; 
+            color: #212529; 
+            padding: 1rem; 
+        }
+        .container { max-width: 28rem; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 2rem; font-weight: 300; }
+        .timer-card { 
+            background: white; 
+            border-radius: 0.75rem; 
+            padding: 2rem; 
+            margin-bottom: 1.5rem; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            text-align: center; 
+        }
+        .exercise-img { 
+            width: 12rem; 
+            height: 12rem; 
+            object-fit: contain; 
+            border-radius: 0.5rem; 
+            margin: 0 auto 1rem; 
+            display: block; 
+        }
+        .exercise-name { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .rep-info { color: #6c757d; margin-bottom: 1.5rem; }
+        .timer { font-size: 3rem; font-weight: bold; color: #dc3545; margin-bottom: 0.5rem; }
+        .total-time { color: #6c757d; margin-bottom: 1.5rem; }
+        .controls { display: flex; gap: 0.75rem; justify-content: center; }
+        button { 
+            padding: 0.75rem 1.5rem; 
+            border: none; 
+            border-radius: 0.375rem; 
+            cursor: pointer; 
+            font-size: 0.875rem; 
+            transition: opacity 0.2s; 
+        }
+        .btn-start { background: #198754; color: white; }
+        .btn-pause { background: #fd7e14; color: white; }
+        .btn-reset { background: #6c757d; color: white; }
+        button:hover:not(:disabled) { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .exercise-list { 
+            background: white; 
+            border-radius: 0.75rem; 
+            padding: 1.5rem; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+        }
+        .exercise-list h3 { margin-bottom: 1rem; }
+        .exercise-item { 
+            padding: 0.75rem; 
+            border-radius: 0.375rem; 
+            margin-bottom: 0.25rem; 
+            display: flex; 
+            justify-content: space-between; 
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .exercise-item:hover:not(.current) { 
+            background: #e9ecef; 
+        }
+        .exercise-item.current { background: #0d6efd; color: white; }
+        .exercise-item.completed { background: #198754; color: white; }
+        .exercise-item.break { background: #f8f9fa; color: #6c757d; font-style: italic; }
+        @media (max-width: 480px) {
+            .container { padding: 0.5rem; }
+            .timer-card { padding: 1.5rem; }
+            .timer { font-size: 2.5rem; }
+            .controls { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="workout-title">{{TITLE}}</h1>
+        
+        <div class="timer-card">
+            <img id="exercise-img" class="exercise-img" src="" alt="" style="display: none;">
+            <h2 id="exercise-name" class="exercise-name">Ready</h2>
+            <div id="rep-info" class="rep-info">0 / 0</div>
+            <div id="timer" class="timer">00:00</div>
+            <div id="total-time" class="total-time">Total: 00:00</div>
+            
+            <div class="controls">
+                <button id="start-btn" class="btn-start">Start</button>
+                <button id="pause-btn" class="btn-pause" disabled>Pause</button>
+                <button id="reset-btn" class="btn-reset">Reset</button>
+            </div>
+        </div>
+        
+        <div class="exercise-list">
+            <h3>Exercises</h3>
+            <div id="exercises"></div>
+        </div>
+    </div>
+
+    <script>
+        const config = {{CONFIG}};
+        
+        class Timer {
+            constructor() {
+                this.exercises = config.exercises;
+                this.currentExerciseIndex = 0;
+                this.currentRep = 0;
+                this.timeLeft = 0;
+                this.totalTime = 0;
+                this.isRunning = false;
+                this.interval = null;
+                
+                this.initElements();
+                this.calculateTotalTime();
+                this.renderExerciseList();
+                this.updateDisplay();
+            }
+            
+            initElements() {
+                this.startBtn = document.getElementById('start-btn');
+                this.pauseBtn = document.getElementById('pause-btn');
+                this.resetBtn = document.getElementById('reset-btn');
+                this.timer = document.getElementById('timer');
+                this.totalTimeEl = document.getElementById('total-time');
+                this.exerciseName = document.getElementById('exercise-name');
+                this.repInfo = document.getElementById('rep-info');
+                this.exerciseImg = document.getElementById('exercise-img');
+                this.exercisesList = document.getElementById('exercises');
+                
+                this.startBtn.onclick = () => this.start();
+                this.pauseBtn.onclick = () => this.pause();
+                this.resetBtn.onclick = () => this.reset();
+            }
+            
+            calculateTotalTime() {
+                this.totalTime = this.exercises.reduce((total, ex) => 
+                    total + (ex.duration * ex.reps), 0);
+                this.updateTotalTimeDisplay();
+            }
+            
+            start() {
+                if (!this.isRunning) {
+                    this.isRunning = true;
+                    this.startBtn.disabled = true;
+                    this.pauseBtn.disabled = false;
+                    
+                    if (this.timeLeft === 0) {
+                        this.startCurrentExercise();
+                    }
+                    
+                    this.interval = setInterval(() => this.tick(), 1000);
+                }
+            }
+            
+            pause() {
+                this.isRunning = false;
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                clearInterval(this.interval);
+            }
+            
+            reset() {
+                this.pause();
+                this.currentExerciseIndex = 0;
+                this.currentRep = 0;
+                this.timeLeft = 0;
+                this.calculateTotalTime();
+                this.updateDisplay();
+                this.renderExerciseList();
+            }
+            
+            startCurrentExercise() {
+                const exercise = this.exercises[this.currentExerciseIndex];
+                this.currentRep = 1;
+                this.timeLeft = exercise.duration;
+                this.updateDisplay();
+            }
+            
+            tick() {
+                this.timeLeft--;
+                this.totalTime--;
+                this.updateDisplay();
+                this.updateTotalTimeDisplay();
+                
+                if (this.timeLeft <= 0) {
+                    this.completeCurrentRep();
+                }
+            }
+            
+            completeCurrentRep() {
+                const exercise = this.exercises[this.currentExerciseIndex];
+                
+                if (this.currentRep < exercise.reps) {
+                    this.currentRep++;
+                    this.timeLeft = exercise.duration;
+                } else {
+                    this.nextExercise();
+                }
+                
+                this.updateDisplay();
+            }
+            
+            nextExercise() {
+                this.currentExerciseIndex++;
+                
+                if (this.currentExerciseIndex >= this.exercises.length) {
+                    this.completeWorkout();
+                    return;
+                }
+                
+                this.startCurrentExercise();
+                this.renderExerciseList();
+            }
+            
+            completeWorkout() {
+                this.pause();
+                this.exerciseName.textContent = 'Complete!';
+                this.repInfo.textContent = 'Well done!';
+                this.timer.textContent = '00:00';
+                this.exerciseImg.style.display = 'none';
+            }
+            
+            updateDisplay() {
+                const exercise = this.exercises[this.currentExerciseIndex];
+                if (!exercise) return;
+                
+                this.exerciseName.textContent = exercise.name;
+                this.repInfo.textContent = `${this.currentRep} / ${exercise.reps}`;
+                this.timer.textContent = this.formatTime(this.timeLeft);
+                
+                if (exercise.image && !exercise.isBreak) {
+                    this.exerciseImg.src = `images/${exercise.image}`;
+                    this.exerciseImg.style.display = 'block';
+                } else {
+                    this.exerciseImg.style.display = 'none';
+                }
+            }
+            
+            updateTotalTimeDisplay() {
+                this.totalTimeEl.textContent = `Total: ${this.formatTime(this.totalTime)}`;
+            }
+            
+            renderExerciseList() {
+                this.exercisesList.innerHTML = this.exercises.map((ex, i) => {
+                    let className = 'exercise-item';
+                    if (i < this.currentExerciseIndex) className += ' completed';
+                    if (i === this.currentExerciseIndex) className += ' current';
+                    if (ex.isBreak) className += ' break';
+                    
+                    return `<div class="${className}" onclick="timer.jumpToExercise(${i})">
+                        <span>${ex.name}</span>
+                        <span>${ex.duration}s × ${ex.reps}</span>
+                    </div>`;
+                }).join('');
+            }
+            
+            jumpToExercise(index) {
+                if (index >= 0 && index < this.exercises.length) {
+                    this.pause();
+                    this.currentExerciseIndex = index;
+                    this.currentRep = 0;
+                    this.timeLeft = 0;
+                    this.calculateRemainingTime();
+                    this.updateDisplay();
+                    this.renderExerciseList();
+                }
+            }
+            
+            calculateRemainingTime() {
+                this.totalTime = 0;
+                for (let i = this.currentExerciseIndex; i < this.exercises.length; i++) {
+                    const ex = this.exercises[i];
+                    if (i === this.currentExerciseIndex) {
+                        this.totalTime += ex.duration * (ex.reps - this.currentRep);
+                    } else {
+                        this.totalTime += ex.duration * ex.reps;
+                    }
+                }
+                this.updateTotalTimeDisplay();
+            }
+            
+            formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        const timer = new Timer();
+    </script>
+</body>
+</html>

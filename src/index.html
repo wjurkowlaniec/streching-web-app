@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stretching Timer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 id="workout-title">Loading...</h1>
+        
+        <div class="timer-section">
+            <div class="exercise-image">
+                <img id="exercise-img" src="" alt="" style="display: none;">
+            </div>
+            
+            <div class="current-exercise">
+                <h2 id="exercise-name">-</h2>
+                <div class="rep-info">
+                    <span id="current-rep">0</span> / <span id="total-reps">0</span>
+                </div>
+            </div>
+            
+            <div class="timer-display">
+                <div id="timer">00:00</div>
+                <div id="total-remaining">Total: 00:00</div>
+            </div>
+            
+            <div class="controls">
+                <button id="start-btn">Start</button>
+                <button id="pause-btn" disabled>Pause</button>
+                <button id="reset-btn">Reset</button>
+            </div>
+        </div>
+        
+        <div class="exercise-list">
+            <h3>Exercises</h3>
+            <ul id="exercises"></ul>
+        </div>
+    </div>
+    
+    <script src="timer.js"></script>
+</body>
+</html>

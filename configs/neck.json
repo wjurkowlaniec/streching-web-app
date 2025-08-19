@@ -1,0 +1,59 @@
+{
+  "name": "Neck Stretching",
+  "exercises": [
+    {
+      "name": "Chin Back",
+      "duration": 5,
+      "reps": 25,
+      "image": "chin-back.png"
+    },
+    {
+      "name": "Break",
+      "duration": 10,
+      "reps": 1,
+      "isBreak": true
+    },
+    {
+      "name": "Left Turn Neck",
+      "duration": 20,
+      "reps": 3,
+      "image": "left-turn.png"
+    },
+    {
+      "name": "Break",
+      "duration": 10,
+      "reps": 1,
+      "isBreak": true
+    },
+    {
+      "name": "Right Turn Neck",
+      "duration": 20,
+      "reps": 3,
+      "image": "right-turn.png"
+    },
+    {
+      "name": "Break",
+      "duration": 10,
+      "reps": 1,
+      "isBreak": true
+    },
+    {
+      "name": "Left Angle Forward",
+      "duration": 20,
+      "reps": 3,
+      "image": "left-angle.png"
+    },
+    {
+      "name": "Break",
+      "duration": 10,
+      "reps": 1,
+      "isBreak": true
+    },
+    {
+      "name": "Right Angle Forward",
+      "duration": 20,
+      "reps": 3,
+      "image": "right-angle.png"
+    }
+  ]
+}
